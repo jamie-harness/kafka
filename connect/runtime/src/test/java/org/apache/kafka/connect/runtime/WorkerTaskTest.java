@@ -22,7 +22,6 @@ import org.apache.kafka.connect.runtime.TaskStatus.Listener;
 import org.apache.kafka.connect.runtime.WorkerTask.TaskMetricsGroup;
 import org.apache.kafka.connect.runtime.errors.RetryWithToleranceOperator;
 import org.apache.kafka.connect.runtime.errors.RetryWithToleranceOperatorTest;
-import org.apache.kafka.connect.runtime.errors.ErrorHandlingMetrics;
 import org.apache.kafka.connect.sink.SinkTask;
 import org.apache.kafka.connect.storage.StatusBackingStore;
 import org.apache.kafka.connect.util.ConnectorTaskId;
@@ -58,7 +57,6 @@ public class WorkerTaskTest {
     @Mock private StatusBackingStore statusBackingStore;
     private ConnectMetrics metrics;
     private RetryWithToleranceOperator retryWithToleranceOperator;
-    @Mock private ErrorHandlingMetrics errorHandlingMetrics;
 
     @Before
     public void setup() {
@@ -75,8 +73,9 @@ public class WorkerTaskTest {
     public void standardStartup() {
         ConnectorTaskId taskId = new ConnectorTaskId("foo", 0);
 
-        WorkerTask workerTask = new TestWorkerTask(taskId, statusListener, TargetState.STARTED, loader, metrics, errorHandlingMetrics,
+        WorkerTask workerTask = new TestWorkerTask(taskId, statusListener, TargetState.STARTED, loader, metrics,
                 retryWithToleranceOperator, Time.SYSTEM, statusBackingStore);
+
         workerTask.initialize(TASK_CONFIG);
         workerTask.run();
         workerTask.stop();
@@ -90,7 +89,7 @@ public class WorkerTaskTest {
     public void stopBeforeStarting() {
         ConnectorTaskId taskId = new ConnectorTaskId("foo", 0);
 
-        WorkerTask workerTask = new TestWorkerTask(taskId, statusListener, TargetState.STARTED, loader, metrics, errorHandlingMetrics,
+        WorkerTask workerTask = new TestWorkerTask(taskId, statusListener, TargetState.STARTED, loader, metrics,
                 retryWithToleranceOperator, Time.SYSTEM, statusBackingStore) {
 
             @Override
@@ -117,7 +116,7 @@ public class WorkerTaskTest {
         ConnectorTaskId taskId = new ConnectorTaskId("foo", 0);
         final CountDownLatch stopped = new CountDownLatch(1);
 
-        WorkerTask workerTask = new TestWorkerTask(taskId, statusListener, TargetState.STARTED, loader, metrics, errorHandlingMetrics,
+        WorkerTask workerTask = new TestWorkerTask(taskId, statusListener, TargetState.STARTED, loader, metrics,
                 retryWithToleranceOperator, Time.SYSTEM, statusBackingStore) {
 
             @Override
@@ -226,9 +225,9 @@ public class WorkerTaskTest {
     private static class TestWorkerTask extends WorkerTask {
 
         public TestWorkerTask(ConnectorTaskId id, Listener statusListener, TargetState initialState, ClassLoader loader,
-                              ConnectMetrics connectMetrics, ErrorHandlingMetrics errorHandlingMetrics, RetryWithToleranceOperator retryWithToleranceOperator, Time time,
+                              ConnectMetrics connectMetrics, RetryWithToleranceOperator retryWithToleranceOperator, Time time,
                               StatusBackingStore statusBackingStore) {
-            super(id, statusListener, initialState, loader, connectMetrics, errorHandlingMetrics,  retryWithToleranceOperator, time, statusBackingStore);
+            super(id, statusListener, initialState, loader, connectMetrics, retryWithToleranceOperator, time, statusBackingStore);
         }
 
         @Override

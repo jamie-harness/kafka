@@ -27,7 +27,6 @@ import org.apache.kafka.common.metrics.stats.Min;
 import org.apache.kafka.common.utils.Time;
 import org.apache.kafka.common.utils.Utils;
 import org.apache.kafka.connect.errors.ConnectException;
-import org.apache.kafka.connect.runtime.errors.ErrorHandlingMetrics;
 import org.apache.kafka.connect.runtime.errors.RetryWithToleranceOperator;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.source.SourceTask;
@@ -86,7 +85,6 @@ class ExactlyOnceWorkerSourceTask extends AbstractWorkerSourceTask {
                                        WorkerConfig workerConfig,
                                        ClusterConfigState configState,
                                        ConnectMetrics connectMetrics,
-                                       ErrorHandlingMetrics errorMetrics,
                                        ClassLoader loader,
                                        Time time,
                                        RetryWithToleranceOperator retryWithToleranceOperator,
@@ -97,7 +95,7 @@ class ExactlyOnceWorkerSourceTask extends AbstractWorkerSourceTask {
                                        Runnable postProducerCheck) {
         super(id, task, statusListener, initialState, keyConverter, valueConverter, headerConverter, transformationChain,
                 new WorkerSourceTaskContext(offsetReader, id, configState, buildTransactionContext(sourceConfig)),
-                producer, admin, topicGroups, offsetReader, offsetWriter, offsetStore, workerConfig, connectMetrics, errorMetrics,
+                producer, admin, topicGroups, offsetReader, offsetWriter, offsetStore, workerConfig, connectMetrics,
                 loader, time, retryWithToleranceOperator, statusBackingStore, closeExecutor);
 
         this.transactionOpen = false;

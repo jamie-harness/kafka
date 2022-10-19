@@ -35,7 +35,6 @@ import org.apache.kafka.connect.runtime.ConnectMetrics.MetricGroup;
 import org.apache.kafka.connect.storage.ClusterConfigState;
 import org.apache.kafka.connect.runtime.errors.RetryWithToleranceOperator;
 import org.apache.kafka.connect.runtime.errors.RetryWithToleranceOperatorTest;
-import org.apache.kafka.connect.runtime.errors.ErrorHandlingMetrics;
 import org.apache.kafka.connect.runtime.isolation.Plugins;
 import org.apache.kafka.connect.runtime.standalone.StandaloneConfig;
 import org.apache.kafka.connect.source.SourceRecord;
@@ -53,7 +52,6 @@ import org.apache.kafka.connect.util.ConnectorTaskId;
 import org.apache.kafka.connect.util.ParameterizedTest;
 import org.apache.kafka.connect.util.TopicAdmin;
 import org.apache.kafka.connect.util.TopicCreationGroup;
-import org.apache.kafka.common.utils.LogCaptureAppender;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
 import org.easymock.IAnswer;
@@ -100,7 +98,6 @@ import static org.apache.kafka.connect.runtime.TopicCreationConfig.PARTITIONS_CO
 import static org.apache.kafka.connect.runtime.TopicCreationConfig.REPLICATION_FACTOR_CONFIG;
 import static org.apache.kafka.connect.runtime.WorkerConfig.TOPIC_CREATION_ENABLE_CONFIG;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
@@ -147,7 +144,6 @@ public class WorkerSourceTaskTest {
     @Mock private Future<RecordMetadata> sendFuture;
     @MockStrict private TaskStatus.Listener statusListener;
     @Mock private StatusBackingStore statusBackingStore;
-    @Mock private ErrorHandlingMetrics errorHandlingMetrics;
 
     private Capture<org.apache.kafka.clients.producer.Callback> producerCallbacks;
 
@@ -232,7 +228,7 @@ public class WorkerSourceTaskTest {
 
     private void createWorkerTask(TargetState initialState, Converter keyConverter, Converter valueConverter,
                                   HeaderConverter headerConverter, RetryWithToleranceOperator retryWithToleranceOperator) {
-        workerTask = new WorkerSourceTask(taskId, sourceTask, statusListener, initialState, keyConverter, valueConverter, errorHandlingMetrics, headerConverter,
+        workerTask = new WorkerSourceTask(taskId, sourceTask, statusListener, initialState, keyConverter, valueConverter, headerConverter,
                 transformationChain, producer, admin, TopicCreationGroup.configuredGroups(sourceConfig),
                 offsetReader, offsetWriter, offsetStore, config, clusterConfigState, metrics, plugins.delegatingLoader(), Time.SYSTEM,
                 retryWithToleranceOperator, statusBackingStore, Runnable::run);
@@ -374,7 +370,7 @@ public class WorkerSourceTaskTest {
 
         sourceTask.stop();
         EasyMock.expectLastCall();
-        expectEmptyOffsetFlush();
+        expectOffsetFlush(true);
 
         expectClose();
 
@@ -384,9 +380,8 @@ public class WorkerSourceTaskTest {
         Future<?> taskFuture = executor.submit(workerTask);
 
         assertTrue(awaitLatch(pollLatch));
-        //Failure in poll should trigger automatic stop of the task
+        //Failure in poll should trigger automatic stop of the worker
         assertTrue(workerTask.awaitStop(1000));
-        assertShouldSkipCommit();
 
         taskFuture.get();
         assertPollMetrics(0);
@@ -470,7 +465,6 @@ public class WorkerSourceTaskTest {
         workerTask.stop();
         workerStopLatch.countDown();
         assertTrue(workerTask.awaitStop(1000));
-        assertShouldSkipCommit();
 
         taskFuture.get();
         assertPollMetrics(0);
@@ -487,11 +481,11 @@ public class WorkerSourceTaskTest {
 
         // We'll wait for some data, then trigger a flush
         final CountDownLatch pollLatch = expectEmptyPolls(1, new AtomicInteger());
-        expectEmptyOffsetFlush();
+        expectOffsetFlush(true);
 
         sourceTask.stop();
         EasyMock.expectLastCall();
-        expectEmptyOffsetFlush();
+        expectOffsetFlush(true);
 
         statusListener.onShutdown(taskId);
         EasyMock.expectLastCall();
@@ -532,7 +526,7 @@ public class WorkerSourceTaskTest {
 
         sourceTask.stop();
         EasyMock.expectLastCall();
-        expectEmptyOffsetFlush();
+        expectOffsetFlush(true);
 
         statusListener.onShutdown(taskId);
         EasyMock.expectLastCall();
@@ -651,6 +645,10 @@ public class WorkerSourceTaskTest {
 
     @Test
     public void testSendRecordsProducerSendFailsImmediately() {
+        if (!enableTopicCreation)
+            // should only test with topic creation enabled
+            return;
+
         createWorkerTask();
 
         SourceRecord record1 = new SourceRecord(PARTITION, OFFSET, TOPIC, 1, KEY_SCHEMA, KEY, RECORD_SCHEMA, RECORD);
@@ -1023,12 +1021,6 @@ public class WorkerSourceTaskTest {
         }
     }
 
-    private void expectEmptyOffsetFlush() throws Exception {
-        EasyMock.expect(offsetWriter.beginFlush()).andReturn(false);
-        sourceTask.commit();
-        EasyMock.expectLastCall();
-    }
-
     private void assertPollMetrics(int minimumPollCountExpected) {
         MetricGroup sourceTaskGroup = workerTask.sourceTaskMetricsGroup().metricGroup();
         MetricGroup taskGroup = workerTask.taskMetricsGroup().metricGroup();
@@ -1113,22 +1105,6 @@ public class WorkerSourceTaskTest {
             EasyMock.expect(admin.describeTopics(topic)).andReturn(Collections.emptyMap());
             Capture<NewTopic> newTopicCapture = EasyMock.newCapture();
             EasyMock.expect(admin.createOrFindTopics(EasyMock.capture(newTopicCapture))).andReturn(createdTopic(topic));
-        }
-    }
-
-    private void assertShouldSkipCommit() {
-        assertFalse(workerTask.shouldCommitOffsets());
-
-        LogCaptureAppender.setClassLoggerToTrace(SourceTaskOffsetCommitter.class);
-        LogCaptureAppender.setClassLoggerToTrace(WorkerSourceTask.class);
-        try (LogCaptureAppender committerAppender = LogCaptureAppender.createAndRegister(SourceTaskOffsetCommitter.class);
-             LogCaptureAppender taskAppender = LogCaptureAppender.createAndRegister(WorkerSourceTask.class)) {
-            SourceTaskOffsetCommitter.commit(workerTask);
-            assertEquals(Collections.emptyList(), taskAppender.getMessages());
-
-            List<String> committerMessages = committerAppender.getMessages();
-            assertEquals(1, committerMessages.size());
-            assertTrue(committerMessages.get(0).contains("Skipping offset commit"));
         }
     }
 }

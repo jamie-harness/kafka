@@ -19,8 +19,6 @@ package org.apache.kafka.image;
 
 import org.apache.kafka.common.Uuid;
 import org.apache.kafka.common.metadata.RemoveAccessControlEntryRecord;
-import org.apache.kafka.image.writer.ImageWriterOptions;
-import org.apache.kafka.image.writer.RecordListWriter;
 import org.apache.kafka.metadata.RecordTestUtils;
 import org.apache.kafka.metadata.authorizer.StandardAcl;
 import org.apache.kafka.metadata.authorizer.StandardAclWithId;
@@ -93,10 +91,10 @@ public class AclsImageTest {
     }
 
     private void testToImageAndBack(AclsImage image) throws Throwable {
-        RecordListWriter writer = new RecordListWriter();
-        image.write(writer, new ImageWriterOptions.Builder().build());
+        MockSnapshotConsumer writer = new MockSnapshotConsumer();
+        image.write(writer);
         AclsDelta delta = new AclsDelta(AclsImage.EMPTY);
-        RecordTestUtils.replayAll(delta, writer.records());
+        RecordTestUtils.replayAllBatches(delta, writer.batches());
         AclsImage nextImage = delta.apply();
         assertEquals(image, nextImage);
     }

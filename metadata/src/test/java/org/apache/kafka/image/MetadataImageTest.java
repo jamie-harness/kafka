@@ -17,8 +17,6 @@
 
 package org.apache.kafka.image;
 
-import org.apache.kafka.image.writer.ImageWriterOptions;
-import org.apache.kafka.image.writer.RecordListWriter;
 import org.apache.kafka.metadata.RecordTestUtils;
 import org.apache.kafka.raft.OffsetAndEpoch;
 import org.junit.jupiter.api.Test;
@@ -87,13 +85,11 @@ public class MetadataImageTest {
     }
 
     private void testToImageAndBack(MetadataImage image) throws Throwable {
-        RecordListWriter writer = new RecordListWriter();
-        image.write(writer, new ImageWriterOptions.Builder().build());
+        MockSnapshotConsumer writer = new MockSnapshotConsumer();
+        image.write(writer);
         MetadataDelta delta = new MetadataDelta(MetadataImage.EMPTY);
-        RecordTestUtils.replayAll(delta,
-                image.highestOffsetAndEpoch().offset(),
-                image.highestOffsetAndEpoch().epoch(),
-                writer.records());
+        RecordTestUtils.replayAllBatches(
+            delta, image.highestOffsetAndEpoch().offset, image.highestOffsetAndEpoch().epoch, writer.batches());
         MetadataImage nextImage = delta.apply();
         assertEquals(image, nextImage);
     }

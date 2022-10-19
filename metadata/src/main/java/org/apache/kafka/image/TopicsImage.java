@@ -18,14 +18,15 @@
 package org.apache.kafka.image;
 
 import org.apache.kafka.common.Uuid;
-import org.apache.kafka.image.writer.ImageWriter;
-import org.apache.kafka.image.writer.ImageWriterOptions;
 import org.apache.kafka.metadata.PartitionRegistration;
+import org.apache.kafka.server.common.ApiMessageAndVersion;
 import org.apache.kafka.server.util.TranslatedValueMapView;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 
@@ -73,9 +74,9 @@ public final class TopicsImage {
         return topicsByName.get(name);
     }
 
-    public void write(ImageWriter writer, ImageWriterOptions options) {
+    public void write(Consumer<List<ApiMessageAndVersion>> out) {
         for (TopicImage topicImage : topicsById.values()) {
-            topicImage.write(writer, options);
+            topicImage.write(out);
         }
     }
 

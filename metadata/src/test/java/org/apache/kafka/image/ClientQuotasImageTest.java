@@ -21,8 +21,6 @@ import org.apache.kafka.common.config.internals.QuotaConfigs;
 import org.apache.kafka.common.metadata.ClientQuotaRecord;
 import org.apache.kafka.common.metadata.ClientQuotaRecord.EntityData;
 import org.apache.kafka.common.quota.ClientQuotaEntity;
-import org.apache.kafka.image.writer.ImageWriterOptions;
-import org.apache.kafka.image.writer.RecordListWriter;
 import org.apache.kafka.metadata.RecordTestUtils;
 import org.apache.kafka.server.common.ApiMessageAndVersion;
 import org.junit.jupiter.api.Test;
@@ -109,10 +107,10 @@ public class ClientQuotasImageTest {
     }
 
     private void testToImageAndBack(ClientQuotasImage image) throws Throwable {
-        RecordListWriter writer = new RecordListWriter();
-        image.write(writer, new ImageWriterOptions.Builder().build());
+        MockSnapshotConsumer writer = new MockSnapshotConsumer();
+        image.write(writer);
         ClientQuotasDelta delta = new ClientQuotasDelta(ClientQuotasImage.EMPTY);
-        RecordTestUtils.replayAll(delta, writer.records());
+        RecordTestUtils.replayAllBatches(delta, writer.batches());
         ClientQuotasImage nextImage = delta.apply();
         assertEquals(image, nextImage);
     }

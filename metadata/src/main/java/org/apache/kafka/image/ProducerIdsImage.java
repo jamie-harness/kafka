@@ -18,10 +18,12 @@
 package org.apache.kafka.image;
 
 import org.apache.kafka.common.metadata.ProducerIdsRecord;
-import org.apache.kafka.image.writer.ImageWriter;
-import org.apache.kafka.image.writer.ImageWriterOptions;
+import org.apache.kafka.server.common.ApiMessageAndVersion;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
+import java.util.function.Consumer;
 
 
 /**
@@ -42,12 +44,13 @@ public final class ProducerIdsImage {
         return nextProducerId;
     }
 
-    public void write(ImageWriter writer, ImageWriterOptions options) {
+    public void write(Consumer<List<ApiMessageAndVersion>> out) {
         if (nextProducerId >= 0) {
-            writer.write(0, new ProducerIdsRecord().
+            out.accept(Collections.singletonList(new ApiMessageAndVersion(
+                new ProducerIdsRecord().
                     setBrokerId(-1).
                     setBrokerEpoch(-1).
-                    setNextProducerId(nextProducerId));
+                    setNextProducerId(nextProducerId), (short) 0)));
         }
     }
 

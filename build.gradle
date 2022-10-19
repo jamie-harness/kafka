@@ -52,6 +52,14 @@ spotless {
   }
 }
 
+gradle.projectsEvaluated {
+  tasks.withType(Test) {
+    filter {
+      setFailOnNoMatchingTests(false)
+    }
+  }
+}
+
 ext {
   gradleVersion = versions.gradle
   minJavaVersion = "8"
@@ -398,7 +406,8 @@ subprojects {
 
   // The suites are for running sets of tests in IDEs.
   // Gradle will run each test class, so we exclude the suites to avoid redundantly running the tests twice.
-  def testsToExclude = ['**/*Suite.class']
+  def testsToExclude = ['**/*Suite.class', '**/RecordsIteratorTest.*', '**/StandardAuthorizerPropertyTest*', '**/Tls13SelectorTest*', '**/KafkaProducerTest*', '**/SslVersionsTransportLayerTest*',
+                        '**/MetricsTest*', '**/SslTransportLayerTest*', '**/SelectorTest*', '**/Tls12SelectorTest*', '**/BufferPoolTest*', '**/LegacyRecordTest*', '**/RemoteLogSegmentLifecycleTest*']
   // Exclude PowerMock tests when running with Java 16 or newer until a version of PowerMock that supports the relevant versions is released
   // The relevant issues are https://github.com/powermock/powermock/issues/1094 and https://github.com/powermock/powermock/issues/1099
   if (JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_16)) {
@@ -504,6 +513,14 @@ subprojects {
 
     maxHeapSize = defaultMaxHeapSize
     jvmArgs = defaultJvmArgs
+
+    // This adds HARNESS_JAVA_AGENT to the testing command if it's
+    // provided through the command line.
+    // Local builds will still remain same as it only adds if the
+    // parameter is provided.
+    if(System.getProperty("HARNESS_JAVA_AGENT")) {
+      jvmArgs += [System.getProperty("HARNESS_JAVA_AGENT")]
+    }
 
     testLogging {
       events = userTestLoggingEvents ?: testLoggingEvents
@@ -1274,7 +1291,6 @@ project(':clients') {
 
     testImplementation libs.bcpkix
     testImplementation libs.junitJupiter
-    testImplementation libs.log4j
     testImplementation libs.mockitoInline
 
     testRuntimeOnly libs.slf4jlog4j
@@ -1282,7 +1298,6 @@ project(':clients') {
     testRuntimeOnly libs.jacksonJDK8Datatypes
     testImplementation libs.jose4j
     testImplementation libs.jacksonJaxrsJsonProvider
-    testImplementation libs.log4j
 
     generator project(':generator')
   }

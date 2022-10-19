@@ -37,7 +37,6 @@ import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.errors.RetriableException;
 import org.apache.kafka.connect.header.ConnectHeaders;
 import org.apache.kafka.connect.integration.MonitorableSourceConnector;
-import org.apache.kafka.connect.runtime.errors.ErrorHandlingMetrics;
 import org.apache.kafka.connect.runtime.errors.RetryWithToleranceOperatorTest;
 import org.apache.kafka.connect.runtime.isolation.Plugins;
 import org.apache.kafka.connect.runtime.standalone.StandaloneConfig;
@@ -138,7 +137,6 @@ public class AbstractWorkerSourceTaskTest {
     private WorkerConfig config;
     private SourceConnectorConfig sourceConfig;
     private MockConnectMetrics metrics = new MockConnectMetrics();
-    @Mock private ErrorHandlingMetrics errorHandlingMetrics;
     private Capture<Callback> producerCallbacks;
 
     private AbstractWorkerSourceTask workerTask;
@@ -791,7 +789,7 @@ public class AbstractWorkerSourceTaskTest {
         workerTask = new AbstractWorkerSourceTask(
                 taskId, sourceTask, statusListener, TargetState.STARTED, keyConverter, valueConverter, headerConverter, transformationChain,
                 sourceTaskContext, producer, admin, TopicCreationGroup.configuredGroups(sourceConfig), offsetReader, offsetWriter, offsetStore,
-                config, metrics, errorHandlingMetrics,  plugins.delegatingLoader(), Time.SYSTEM, RetryWithToleranceOperatorTest.NOOP_OPERATOR,
+                config, metrics, plugins.delegatingLoader(), Time.SYSTEM, RetryWithToleranceOperatorTest.NOOP_OPERATOR,
                 statusBackingStore, Runnable::run) {
             @Override
             protected void prepareToInitializeTask() {

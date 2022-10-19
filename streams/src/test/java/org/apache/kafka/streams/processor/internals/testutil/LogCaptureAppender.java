@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kafka.common.utils;
+package org.apache.kafka.streams.processor.internals.testutil;
 
 import org.apache.log4j.AppenderSkeleton;
 import org.apache.log4j.Level;

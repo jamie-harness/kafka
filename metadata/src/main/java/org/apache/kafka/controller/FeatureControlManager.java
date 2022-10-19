@@ -320,25 +320,22 @@ public class FeatureControlManager {
 
         @Override
         public boolean hasNext() {
-            return needsWriteMetadataVersion() || iterator.hasNext();
-        }
-
-        private boolean needsWriteMetadataVersion() {
-            return !wroteVersion && metadataVersion.isAtLeast(minimumBootstrapVersion);
+            return !wroteVersion || iterator.hasNext();
         }
 
         @Override
         public List<ApiMessageAndVersion> next() {
             // Write the metadata.version first
-            if (needsWriteMetadataVersion()) {
-                wroteVersion = true;
-                return Collections.singletonList(new ApiMessageAndVersion(new FeatureLevelRecord()
-                    .setName(MetadataVersion.FEATURE_NAME)
-                    .setFeatureLevel(metadataVersion.featureLevel()), FEATURE_LEVEL_RECORD.lowestSupportedVersion()));
+            if (!wroteVersion) {
+                if (metadataVersion.isAtLeast(minimumBootstrapVersion)) {
+                    wroteVersion = true;
+                    return Collections.singletonList(new ApiMessageAndVersion(new FeatureLevelRecord()
+                            .setName(MetadataVersion.FEATURE_NAME)
+                            .setFeatureLevel(metadataVersion.featureLevel()), FEATURE_LEVEL_RECORD.lowestSupportedVersion()));
+                }
             }
-
             // Then write the rest of the features
-            if (!iterator.hasNext()) throw new NoSuchElementException();
+            if (!hasNext()) throw new NoSuchElementException();
             Entry<String, Short> entry = iterator.next();
             return Collections.singletonList(new ApiMessageAndVersion(new FeatureLevelRecord()
                 .setName(entry.getKey())

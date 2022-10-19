@@ -19,15 +19,18 @@ package org.apache.kafka.image;
 
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.metadata.ConfigRecord;
-import org.apache.kafka.image.writer.ImageWriter;
-import org.apache.kafka.image.writer.ImageWriterOptions;
+import org.apache.kafka.server.common.ApiMessageAndVersion;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import static org.apache.kafka.common.metadata.MetadataRecordType.CONFIG_RECORD;
 
 
 /**
@@ -58,18 +61,16 @@ public final class ConfigurationImage {
         return properties;
     }
 
-    public void write(
-        ConfigResource configResource,
-        ImageWriter writer,
-        ImageWriterOptions options
-    ) {
+    public void write(ConfigResource configResource, Consumer<List<ApiMessageAndVersion>> out) {
+        List<ApiMessageAndVersion> records = new ArrayList<>();
         for (Map.Entry<String, String> entry : data.entrySet()) {
-            writer.write(0, new ConfigRecord().
+            records.add(new ApiMessageAndVersion(new ConfigRecord().
                 setResourceType(configResource.type().id()).
                 setResourceName(configResource.name()).
                 setName(entry.getKey()).
-                setValue(entry.getValue()));
+                setValue(entry.getValue()), CONFIG_RECORD.highestSupportedVersion()));
         }
+        out.accept(records);
     }
 
     @Override

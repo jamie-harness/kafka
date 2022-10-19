@@ -51,9 +51,4 @@ public final class ProducerIdsDelta {
     public ProducerIdsImage apply() {
         return new ProducerIdsImage(nextProducerId);
     }
-
-    @Override
-    public String toString() {
-        return "ProducerIdsDelta(nextProducerId=" + nextProducerId + ")";
-    }
 }

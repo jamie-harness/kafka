@@ -23,19 +23,15 @@ import org.apache.kafka.common.utils.Time;
 import org.apache.kafka.connect.runtime.ConnectMetrics;
 import org.apache.kafka.connect.runtime.ConnectMetricsRegistry;
 import org.apache.kafka.connect.util.ConnectorTaskId;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Contains various sensors used for monitoring errors.
  */
-public class ErrorHandlingMetrics implements AutoCloseable {
+public class ErrorHandlingMetrics {
 
     private final Time time = new SystemTime();
 
     private final ConnectMetrics.MetricGroup metricGroup;
-
-    private static final Logger log = LoggerFactory.getLogger(ErrorHandlingMetrics.class);
 
     // metrics
     private final Sensor recordProcessingFailures;
@@ -141,14 +137,5 @@ public class ErrorHandlingMetrics implements AutoCloseable {
      */
     public ConnectMetrics.MetricGroup metricGroup() {
         return metricGroup;
-    }
-
-    /**
-     * Close the task Error metrics group when the task is closed
-     */
-    @Override
-    public void close() {
-        log.debug("Removing error handling metrics of group {}", metricGroup.groupId());
-        metricGroup.close();
     }
 }

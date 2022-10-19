@@ -21,8 +21,7 @@ import org.apache.kafka.common.message.DescribeClientQuotasResponseData.ValueDat
 import org.apache.kafka.common.metadata.ClientQuotaRecord;
 import org.apache.kafka.common.metadata.ClientQuotaRecord.EntityData;
 import org.apache.kafka.common.quota.ClientQuotaEntity;
-import org.apache.kafka.image.writer.ImageWriter;
-import org.apache.kafka.image.writer.ImageWriterOptions;
+import org.apache.kafka.server.common.ApiMessageAndVersion;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -31,7 +30,10 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
+
+import static org.apache.kafka.common.metadata.MetadataRecordType.CLIENT_QUOTA_RECORD;
 
 
 /**
@@ -52,18 +54,17 @@ public final class ClientQuotaImage {
         return quotas;
     }
 
-    public void write(
-        ClientQuotaEntity entity,
-        ImageWriter writer,
-        ImageWriterOptions options
-    ) {
+    public void write(ClientQuotaEntity entity, Consumer<List<ApiMessageAndVersion>> out) {
+        List<ApiMessageAndVersion> records = new ArrayList<>(quotas.size());
         for (Entry<String, Double> entry : quotas.entrySet()) {
-            writer.write(0, new ClientQuotaRecord().
+            records.add(new ApiMessageAndVersion(new ClientQuotaRecord().
                 setEntity(entityToData(entity)).
                 setKey(entry.getKey()).
                 setValue(entry.getValue()).
-                setRemove(false));
+                setRemove(false),
+                CLIENT_QUOTA_RECORD.highestSupportedVersion()));
         }
+        out.accept(records);
     }
 
     public static List<EntityData> entityToData(ClientQuotaEntity entity) {
