@@ -25,7 +25,7 @@ import org.apache.kafka.streams.processor.ProcessorContext
 
 /**
  * Implicit classes that offer conversions of Scala function literals to SAM (Single Abstract Method) objects in Java.
- * These make the Scala APIs much more expressive, with less boilerplate and more succinct.
+ * These make the Scala APIs much more expressive, with less boilerplate and more succinct. (Test)
  */
 private[scala] object FunctionsCompatConversions {
 
