@@ -38,7 +38,7 @@ import java.util.TreeSet;
 import java.util.regex.Pattern;
 
 /**
- * Connect plugin utility methods.
+ * Connect plugin utility methods. (Test)
  */
 public class PluginUtils {
     private static final Logger log = LoggerFactory.getLogger(PluginUtils.class);

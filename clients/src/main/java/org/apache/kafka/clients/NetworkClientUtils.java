@@ -28,7 +28,7 @@ import java.util.List;
  * Provides additional utilities for {@link NetworkClient} (e.g. to implement blocking behaviour).
  */
 public final class NetworkClientUtils {
-
+    // Test
     private NetworkClientUtils() {}
 
     /**

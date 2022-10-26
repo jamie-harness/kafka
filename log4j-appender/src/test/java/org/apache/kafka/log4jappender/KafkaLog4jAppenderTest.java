@@ -44,7 +44,7 @@ import static org.mockito.Mockito.when;
 public class KafkaLog4jAppenderTest {
 
     private Logger logger = Logger.getLogger(KafkaLog4jAppenderTest.class);
-
+    // Test
     @BeforeEach
     public void setup() {
         LogLog.setInternalDebugging(true);

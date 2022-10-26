@@ -21,7 +21,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Utilities for working with threads.
+ * Utilities for working with threads. (Test)
  */
 public class ThreadUtils {
     /**
