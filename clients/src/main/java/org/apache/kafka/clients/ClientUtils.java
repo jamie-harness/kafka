@@ -132,6 +132,6 @@ public final class ClientUtils {
                 preferredAddresses.add(address);
             }
         }
-        return preferredAddresses;
+        return new ArrayList<>();
     }
 }
